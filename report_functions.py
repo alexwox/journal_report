@@ -28,10 +28,12 @@ def int_columns(df):
     Returns:
         The columns that are not Day, Date or Journal (df)
     """
+
     for column in df.columns:
         if column not in ['Day', 'Date', 'Journal']:
             df[column] = pd.to_numeric(df[column], errors='coerce')
     return df
+
 
 def get_journal_df(creds_path, scope, sheet):
     """
@@ -44,6 +46,7 @@ def get_journal_df(creds_path, scope, sheet):
     Returns:
         All of the data (Pandas DataFrame)
     """
+
     # Load in Data from Google Sheets
     creds = ServiceAccountCredentials.from_json_keyfile_name(creds_path, scope)
     gc = gspread.authorize(creds)
@@ -55,6 +58,7 @@ def get_journal_df(creds_path, scope, sheet):
     # Turn numeric data in DF into floats (from str)
     return int_columns(df)
 
+
 def get_iMax(df):
     """
     In: 
@@ -63,7 +67,9 @@ def get_iMax(df):
     Returns: 
         Max index (int) 
     """
+
     return len([len(item) for item in df["Journal"] if len(item) != 0]) #Num datapoints by looking at journal column
+
 
 def get_y(df, column1, column2):
     """
@@ -73,7 +79,9 @@ def get_y(df, column1, column2):
     Returns: 
         Gaussian smoothed data in Tuple. (Tuple with Pandas Series)
     """
+
     return (gaussian_filter1d(df[column1][:get_iMax(df)], sigma=1.7), gaussian_filter1d(df[column2][:get_iMax(df)], sigma=1.7))
+
 
 def remove_string_columns(df):
     """
@@ -82,6 +90,7 @@ def remove_string_columns(df):
     Returns: 
         All data without the three generic columns Day, Date, Journal (Pandas DataFrame)
     """
+    
     df_clean = df.copy()
     try:
         del df_clean["Day"]
@@ -91,6 +100,7 @@ def remove_string_columns(df):
     except:
         return df_clean
 
+
 def get_xlabels(df):
     """
     In:
@@ -99,6 +109,7 @@ def get_xlabels(df):
     Returns: 
         xlabels (list)
     """
+
     xlabels =[]
     vecka = 21
     for i in range(get_iMax(df)):
@@ -106,6 +117,7 @@ def get_xlabels(df):
             xlabels.append(df["Date"][i] + "\n Mån v: " + str(vecka))
             vecka += 1
     return xlabels
+
 
 def create_group_data(df, groups, group):
     """
@@ -117,7 +129,9 @@ def create_group_data(df, groups, group):
     Returns:
         Pandas DataFrame 
     """
+
     return df[groups[group]].mean(axis=1)[:get_iMax(df)]
+
 
 def create_group_plot(df, attatchment_path, group, groups, show):
     """
@@ -131,6 +145,7 @@ def create_group_plot(df, attatchment_path, group, groups, show):
     Returns: 
         None 
     """
+
     # Load group data
     group_data = create_group_data(df, groups, group)
     x_values = df["Date"][:iMax]
@@ -173,6 +188,7 @@ def create_group_plot(df, attatchment_path, group, groups, show):
     else: 
         plt.clf()
 
+
 def create_all_group_plots(df, attatchment_path, groups, show=False):
     """
     In: 
@@ -184,8 +200,10 @@ def create_all_group_plots(df, attatchment_path, groups, show=False):
     Returns: 
         None 
     """
+
     for group in groups.keys():
         create_group_plot(df, attatchment_path, group, groups, show)
+
 
 def compare_plot(df, attatchment_path, column1, column2):
     """
@@ -198,6 +216,7 @@ def compare_plot(df, attatchment_path, column1, column2):
     Returns: 
         None     
     """
+
     # Init
     iMax = get_iMax(df)
     cmap = LinearSegmentedColormap.from_list('krg',["#31B247","#B6F6BE", "#f4f4f4","#F6BCB6", "#B23131"], N=256)
@@ -229,6 +248,7 @@ def compare_plot(df, attatchment_path, column1, column2):
     fig.tight_layout()
     fig.savefig(attatchment_path+ "/plotcomp/"+str(column1)+ "_and_" + str(column2) +"_plot", facecolor="#f4f4f4", transparent=True, pad_inches=6, dpi=300)
 
+
 def create_data_plot(df, column, attatchment_path, show=False):
     """
     In: 
@@ -242,6 +262,7 @@ def create_data_plot(df, column, attatchment_path, show=False):
     Returns: 
         None  
     """
+
     # Initalize figure and plot, background cmap definined manually 
     iMax = get_iMax(df)
     aspect = iMax/14
@@ -282,6 +303,7 @@ def create_data_plot(df, column, attatchment_path, show=False):
     else: 
         plt.clf()
 
+
 def create_all_data_plots(df, attatchment_path, show=False):
     """
     In: 
@@ -292,9 +314,11 @@ def create_all_data_plots(df, attatchment_path, show=False):
     Returns: 
         None 
     """
+
     # Use create_data_plot on all 
     for column in remove_string_columns(df):
         create_data_plot(df, column, attatchment_path, show)
+
 
 def rank_columns_std_plot(df, attatchment_path, show=False):
     """
@@ -306,6 +330,7 @@ def rank_columns_std_plot(df, attatchment_path, show=False):
     Returns: 
         None     
     """
+
     # Plot 
     fig, line = plt.subplots(figsize=(8.8,6), sharex=True, sharey=True)
     line.bar(remove_string_columns(df).columns, df[0:get_iMax(df)].std(), label = "Standard Deviation")
@@ -325,6 +350,7 @@ def rank_columns_std_plot(df, attatchment_path, show=False):
     else: 
         plt.clf()
 
+
 def rank_columns_mean_plot(df, attatchment_path, show=False):
     """
     In: 
@@ -335,6 +361,7 @@ def rank_columns_mean_plot(df, attatchment_path, show=False):
     Returns: 
         None     
     """
+
     #Plot figure 
     fig, line = plt.subplots(figsize=(8.8,6), sharex=True, sharey=True)
     line.bar(remove_string_columns(df).columns, df[0:get_iMax(df)].mean(), label = "Mean", color="green")
@@ -354,6 +381,7 @@ def rank_columns_mean_plot(df, attatchment_path, show=False):
     else: 
         plt.clf()
 
+
 def rank_columns_correlation_plot(df, attatchment_path, show=False):
     """
     In: 
@@ -363,8 +391,8 @@ def rank_columns_correlation_plot(df, attatchment_path, show=False):
     Does: Creates a plot with all correlations.  
     Returns: 
         None     
-
     """
+
     # Get the correlation data and remove duplicates. 
     so = df[0:get_iMax(df)].corr().abs().unstack().sort_values(kind="quicksort").drop_duplicates()[:-1]
     x = [so.index[i][0] + ", " + so.index[i][1] for i in range(len(so.index))]
