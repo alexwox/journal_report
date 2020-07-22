@@ -20,9 +20,8 @@ groups={"Development":["Discipline", "Productivity", "Creativity", "Insight", "M
         "Health":["Sleep", "Training&Strech", "Diet", "Physique"], \
         "Happiness":["Harmony", "Social", "ER", "Experience"]}
 
-show = True
+show = False
 send_mail = True
-now = str(datetime.now())
 
 # Call functions 
 df = get_journal_df(creds_path, scope, sheet)
@@ -32,37 +31,39 @@ rank_columns_mean_plot(df, attatchment_path, show=show)
 rank_columns_std_plot(df, attatchment_path, show=show)
 create_all_group_plots(df, attatchment_path, groups, show=show)
 
-# Email details
-message = MIMEMultipart()
-message["From"] = bot_mail
-message["To"] = receiver_email
-message["Subject"] = "Good morning"
-message["Bcc"] = receiver_email
+#Check if send_mail is True
+if send_mail:
+    # Email details
+    message = MIMEMultipart()
+    message["From"] = bot_mail
+    message["To"] = receiver_email
+    message["Subject"] = "Good morning"
+    message["Bcc"] = receiver_email
 
-# Add attatchments to Email, based on the attachments folder
-directory = r"{}".format(attatchment_path)
-for filename in os.listdir(directory):
-    if filename.endswith(".jpg") or filename.endswith(".png"):  # Loop the images. 
-        file = attatchment_path + filename
-        with open(file, "rb") as attachment:
-            part = MIMEBase("application", "octet-stream")
-            part.set_payload(attachment.read())
-        encoders.encode_base64(part) # Encode
-        part.add_header(  # Attatchment name in email. Important for opening. 
-            "Content-Disposition",
-            f"attachment; filename= {filename}")
-        message.attach(part)
+    # Add attatchments to Email, based on the attachments folder
+    directory = r"{}".format(attatchment_path)
+    for filename in os.listdir(directory):
+        if filename.endswith(".jpg") or filename.endswith(".png"):  # Loop the images. 
+            file = attatchment_path + filename
+            with open(file, "rb") as attachment:
+                part = MIMEBase("application", "octet-stream")
+                part.set_payload(attachment.read())
+            encoders.encode_base64(part) # Encode
+            part.add_header(  # Attatchment name in email. Important for opening. 
+                "Content-Disposition",
+                f"attachment; filename= {filename}")
+            message.attach(part)
 
-# Email message
-body = "Här är den dagliga statistikrapporten från journalen \n Lycka till idag!"
-message.attach(MIMEText(body, "plain"))
+    # Email message
+    body = "Här är den dagliga statistikrapporten från journalen \n Lycka till idag!"
+    message.attach(MIMEText(body, "plain"))
 
-# Send email
-port = 465
-context = ssl.create_default_context()
-with smtplib.SMTP_SSL("smtp.gmail.com", port, context=context) as server:
-    server.login(bot_mail, password)
-    if send_mail:
+    # Send email
+    port = 465
+    context = ssl.create_default_context()
+    with smtplib.SMTP_SSL("smtp.gmail.com", port, context=context) as server:
+        server.login(bot_mail, password)
         server.sendmail(bot_mail, receiver_email, message.as_string())
-        print("Sent. " + now)
-    else: print("Done. " + now)
+        print("Sent. " + str(datetime.now()))
+
+else: print("Done. " + str(datetime.now()))
